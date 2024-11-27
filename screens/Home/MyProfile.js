@@ -10,11 +10,52 @@ import {
   TouchableHighlight,
 } from "react-native";
 import firebase from "firebase/compat/app";
+import * as ImagePicker from "expo-image-picker";
+import { supabase } from "../../config";
 export default function MyProfile() {
   const [nom, setNom] = useState();
   const [pseudo, setpseudo] = useState();
   const [telephone, setTelephone] = useState();
+  const [isDefaultImage, setisDefaultImage] = useState(true);
+  const [uriLocalImage, seturiLocalImage] = useState();
+  const [localImage, setlocalImage] = useState();
+
   const db = firebase.database();
+
+  const pickImage = async () => {
+    // No permissions request is necessary for launching the image library
+    let result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images", "videos"],
+      allowsEditing: false,
+      aspect: [4, 3],
+      quality: 1,
+    });
+
+    console.log(result);
+
+    if (!result.canceled) {
+      setisDefaultImage(false);
+      seturiLocalImage(result.assets[0].uri);
+      setlocalImage(result.assets[0].fileName);
+    }
+  };
+
+  const uploadImageToStorage = async () => {
+    const res = await fetch(uri);
+    const blob = await res.blob();
+    const arraybuffer = await new Response(blob).arrayBuffer();
+
+    await supabase.storage
+      .from("ProfileImage")
+      .upload(localImage, arraybuffer, {
+        upsert: true,
+      });
+
+    const { link } = supabase.storage
+      .from("ProfileImage")
+      .getPublicUrl(localImage);
+    return link.publicUrl;
+  };
   return (
     <ImageBackground
       source={require("../../assets/bg-card-front.png")}
@@ -23,14 +64,19 @@ export default function MyProfile() {
       <StatusBar style="light" />
       <Text style={styles.textstyle}>My Account</Text>
 
-      <Image
-        source={require("../../assets/icon.png")}
-        style={{
-          height: 200,
-          width: 200,
-        }}
-      />
-
+      <TouchableHighlight onPress={() => pickImage()}>
+        <Image
+          source={
+            isDefaultImage
+              ? require("../../assets/icon.png")
+              : { uri: uriLocalImage }
+          }
+          style={{
+            height: 200,
+            width: 200,
+          }}
+        />
+      </TouchableHighlight>
       <TextInput
         onChangeText={(text) => {
           setNom(text);
@@ -61,11 +107,13 @@ export default function MyProfile() {
         style={styles.textinputstyle}
       ></TextInput>
       <TouchableHighlight
-        onPress={() => {
+        onPress={async () => {
+          const uriImage = await uploadImageToStorage();
+
           const ref_lesprofiles = db.ref("lesprofiles");
           const key = ref_lesprofiles.push().key;
           const ref_unprofil = ref_lesprofiles.child("unprofil_" + key);
-          ref_unprofil.set({ nom, pseudo, telephone });
+          ref_unprofil.set({ nom, pseudo, telephone, uriImage });
         }}
         activeOpacity={0.5}
         underlayColor="#DDDDDD"
