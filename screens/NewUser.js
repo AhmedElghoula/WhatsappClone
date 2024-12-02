@@ -22,6 +22,7 @@ export default function NewUser(props) {
   });
 
   var pwd, confirmPwd, email;
+
   return (
     <ImageBackground
       source={require("../assets/bg-card-front.png")}
@@ -87,7 +88,8 @@ export default function NewUser(props) {
               auth
                 .createUserWithEmailAndPassword(email, pwd)
                 .then(() => {
-                  props.navigation.replace("Home");
+                  const currentId = auth.currentUser.uid;
+                  props.navigation.replace("Home", { id: currentId });
                 })
                 .catch((error) => {
                   alert(error);

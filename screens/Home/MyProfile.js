@@ -12,7 +12,8 @@ import {
 import firebase from "firebase/compat/app";
 import * as ImagePicker from "expo-image-picker";
 import { supabase } from "../../config";
-export default function MyProfile() {
+export default function MyProfile(props) {
+  const currentId = props.route.params.id;
   const [nom, setNom] = useState();
   const [pseudo, setpseudo] = useState();
   const [telephone, setTelephone] = useState();
@@ -45,16 +46,15 @@ export default function MyProfile() {
     const blob = await res.blob();
     const arraybuffer = await new Response(blob).arrayBuffer();
 
-    await supabase.storage
-      .from("ProfileImage")
-      .upload(localImage, arraybuffer, {
-        upsert: true,
-      });
+    await supabase.storage.from("ProfileImage").upload(currentId, arraybuffer, {
+      upsert: true,
+    });
 
-    const { link } = supabase.storage
+    const result = supabase.storage
       .from("ProfileImage")
-      .getPublicUrl(localImage);
-    return link.publicUrl;
+      .getPublicUrl(currentId);
+    console.log(result);
+    return result.data.publicUrl;
   };
   return (
     <ImageBackground
@@ -108,12 +108,18 @@ export default function MyProfile() {
       ></TextInput>
       <TouchableHighlight
         onPress={async () => {
-          const uriImage = await uploadImageToStorage();
+          // const uriImage = await uploadImageToStorage();
 
           const ref_lesprofiles = db.ref("lesprofiles");
           const key = ref_lesprofiles.push().key;
-          const ref_unprofil = ref_lesprofiles.child("unprofil_" + key);
-          ref_unprofil.set({ nom, pseudo, telephone, uriImage });
+          const ref_unprofil = ref_lesprofiles.child(currentId);
+          ref_unprofil.set({
+            id: currentId,
+            nom,
+            pseudo,
+            telephone,
+            //uriImage
+          });
         }}
         activeOpacity={0.5}
         underlayColor="#DDDDDD"

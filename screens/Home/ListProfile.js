@@ -8,7 +8,8 @@ import {
 import React, { useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import firebase from "firebase/compat/app";
-export default function ListProfile() {
+export default function ListProfile(props) {
+  const currentId = props.currentId;
   const db = firebase.database();
   const ref_lesprofiles = db.ref("lesprofiles");
   const [data, setdata] = useState([]);
@@ -16,7 +17,9 @@ export default function ListProfile() {
   useEffect(() => {
     ref_lesprofiles.on("value", (snapshot) => {
       snapshot.forEach((profile) => {
-        d.push(profile.val());
+        if (profile.val.id == currentId) {
+          d.push(profile.val());
+        }
       });
       setdata(d);
     });
@@ -36,7 +39,15 @@ export default function ListProfile() {
         data={data}
         renderItem={({ item }) => {
           return (
-            <Text key={item.nom}>
+            <Text
+              key={item.nom}
+              onPress={() => {
+                props.navigation.navigate("Chat", {
+                  currentId: currentId,
+                  item: item,
+                });
+              }}
+            >
               {item.nom} {item.pseudo}
             </Text>
           );

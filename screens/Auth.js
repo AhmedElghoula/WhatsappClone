@@ -9,8 +9,9 @@ import {
 import React from "react";
 import { TextInput } from "react-native-paper";
 import { StatusBar } from "expo-status-bar";
-
+import firebase from "../config";
 export default function Auth(props) {
+  const auth = firebase.auth();
   const styles = StyleSheet.create({
     container: {
       flex: 1,
@@ -78,7 +79,16 @@ export default function Auth(props) {
         <View style={{ flexDirection: "row", gap: 20, marginTop: 20 }}>
           <Button
             onPress={() => {
-              props.navigation.navigate("Home");
+              // props.navigation.navigate("Home");
+              auth
+                .signInWithEmailAndPassword(emailff, password)
+                .then(() => {
+                  const currentId = auth.currentUser.uid;
+                  props.navigation.navigate("Home", { id: currentId });
+                })
+                .catch((err) => {
+                  alert(err);
+                });
             }}
             title="Submit"
           ></Button>
